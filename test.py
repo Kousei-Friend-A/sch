@@ -1,8 +1,13 @@
 import asyncio
+import logging
 from json import loads as jloads
 from aiohttp import ClientSession
 from pyrogram import Client
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Replace with your own values
 API_ID = 8143727  # Your API ID
@@ -23,11 +28,13 @@ async def delete_previous_schedule():
     async for message in app.get_chat_history(MAIN_CHANNEL, limit=30):
         if "⏰ Current TimeZone :" in message.text:  # Check for the timezone text
             await app.delete_messages(MAIN_CHANNEL, message.message_id)
+            logger.info("Deleted previous schedule message.")
             break
 
 async def update_schedule():
     """Fetch and send today's anime schedule."""
     try:
+        logger.info("Updating schedule...")
         await delete_previous_schedule()  # Delete previous schedule message
 
         aniContent = await fetch_schedule()
@@ -44,21 +51,24 @@ async def update_schedule():
 
         # Send the new schedule message
         await app.send_message(MAIN_CHANNEL, text)
+        logger.info("Schedule updated successfully.")
 
     except Exception as err:
-        print(f"Error: {str(err)}")
+        logger.error(f"Error while updating schedule: {str(err)}")
 
 async def schedule_updates():
     """Schedule the updates for every 5 minutes and daily at 12:30 AM."""
     scheduler = AsyncIOScheduler()
     scheduler.add_job(update_schedule, 'interval', minutes=5)  # Check every 5 minutes
-    scheduler.add_job(update_schedule, 'cron', hour=0, minute=30)  # Check every day at 12:30 AM
+    scheduler.add_job(update_schedule, 'cron', hour=22, minute=50)  # Check every day at 12:30 AM
     scheduler.start()
+    logger.info("Scheduler started.")
 
 async def main():
     """Main function to run the bot."""
     await schedule_updates()  # Start the scheduler
     await app.start()  # Start the Pyrogram client
+    logger.info("Bot started and running.")
     await asyncio.Future()  # Keep the bot running indefinitely
 
 if __name__ == '__main__':
