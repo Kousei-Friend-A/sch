@@ -17,6 +17,8 @@ MAIN_CHANNEL = '@animeencodetest'  # Your Channel ID (e.g., '@your_channel')
 
 app = Client("bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
+last_message_id = None  # Variable to store the last message ID
+
 async def fetch_schedule():
     """Fetch today's anime schedule from the API."""
     async with ClientSession() as ses:
@@ -25,14 +27,17 @@ async def fetch_schedule():
 
 async def delete_previous_schedule():
     """Delete the previous schedule message if it exists."""
-    async for message in app.get_chat_history(MAIN_CHANNEL, limit=30):
-        if "⏰ Current TimeZone :" in message.text:  # Check for the timezone text
-            await app.delete_messages(MAIN_CHANNEL, message.message_id)
+    global last_message_id
+    if last_message_id is not None:
+        try:
+            await app.delete_messages(MAIN_CHANNEL, last_message_id)
             logger.info("Deleted previous schedule message.")
-            break
+        except Exception as e:
+            logger.error(f"Error deleting previous message: {str(e)}")
 
 async def update_schedule():
     """Fetch and send today's anime schedule."""
+    global last_message_id
     try:
         logger.info("Updating schedule...")
         await delete_previous_schedule()  # Delete previous schedule message
@@ -50,7 +55,8 @@ async def update_schedule():
         text += """<b>⏰ Current TimeZone :</b> <code>IST (UTC +5:30)</code>"""
 
         # Send the new schedule message
-        await app.send_message(MAIN_CHANNEL, text)
+        message = await app.send_message(MAIN_CHANNEL, text)
+        last_message_id = message.message_id  # Store the last message ID
         logger.info("Schedule updated successfully.")
 
     except Exception as err:
@@ -60,7 +66,7 @@ async def schedule_updates():
     """Schedule the updates for every 5 minutes and daily at 12:30 AM."""
     scheduler = AsyncIOScheduler()
     scheduler.add_job(update_schedule, 'interval', minutes=5)  # Check every 5 minutes
-    scheduler.add_job(update_schedule, 'cron', hour=22, minute=50)  # Check every day at 12:30 AM
+    scheduler.add_job(update_schedule, 'cron', hour=22, minute=55)  # Check every day at 12:30 AM
     scheduler.start()
     logger.info("Scheduler started.")
 
