@@ -61,17 +61,16 @@ async def upcoming_animes():
     except Exception as err:
         print(f"Error: {str(err)}")  # Print error to console for debugging
 
-def schedule_upcoming_animes():
+def schedule_upcoming_animes(scheduler):
     """Schedule the tasks."""
-    scheduler = AsyncIOScheduler()
     scheduler.add_job(upcoming_animes, 'interval', minutes=5)  # Check every 5 minutes
-    scheduler.start()
 
 async def main():
     """Main function to run the bot."""
-    schedule_upcoming_animes()  # Start the scheduler
+    scheduler = AsyncIOScheduler()
+    schedule_upcoming_animes(scheduler)  # Start the scheduler
+    scheduler.start()  # Start the scheduler
     await client.run_until_disconnected()  # Run the client until disconnected
 
 if __name__ == '__main__':
     asyncio.run(main())
-    
