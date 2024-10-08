@@ -49,10 +49,10 @@ async def update_schedule():
             aired_icon = "✅ " if i["aired"] else ""
             title = i["title"]
             time = i["time"]
-            sch_list += f"""[<code>{time}</code>] - 📌 <b>{aired_icon}{title}</b>\n\n"""
+            sch_list += f"""[`{time}`] - 📌 __{title}__ {aired_icon}\n\n"""
 
         text += sch_list
-        text += """<b>⏰ Current TimeZone :</b> <code>IST (UTC +5:30)</code>"""
+        text += """__⏰ Current TimeZone :__ `IST (UTC +5:30)`"""
 
         # Send the new schedule message
         message = await client.send_message(MAIN_CHANNEL, text)
@@ -67,7 +67,7 @@ async def schedule_updates():
     """Schedule the updates for every 5 minutes and daily at 12:30 AM."""
     scheduler = AsyncIOScheduler()
     scheduler.add_job(update_schedule, 'interval', minutes=5)  # Check every 5 minutes
-    scheduler.add_job(update_schedule, 'cron', hour=23, minute=15)  # Check every day at 12:30 AM
+    scheduler.add_job(update_schedule, 'cron', hour=23, minute=25)  # Check every day at 12:30 AM
     scheduler.start()
     logger.info("Scheduler started.")
 
