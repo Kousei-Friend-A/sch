@@ -52,13 +52,14 @@ async def schedule_updates():
     """Schedule the updates for every 5 minutes and daily at 12:30 AM."""
     scheduler = AsyncIOScheduler()
     scheduler.add_job(update_schedule, 'interval', minutes=5)  # Check every 5 minutes
-    scheduler.add_job(update_schedule, 'cron', hour=22, minute=45)  # Check every day at 12:30 AM
+    scheduler.add_job(update_schedule, 'cron', hour=0, minute=30)  # Check every day at 12:30 AM
     scheduler.start()
 
 async def main():
     """Main function to run the bot."""
     await schedule_updates()  # Start the scheduler
-    await app.run()  # Run the client until disconnected
+    await app.start()  # Start the Pyrogram client
+    await app.idle()  # Keep the bot running until interrupted
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
