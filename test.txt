@@ -1,0 +1,42 @@
+import asyncio
+from telethon import TelegramClient
+from telethon.tl.functions.messages import EditMessage
+from telethon.tl.functions.messages import PinMessage
+from telethon.tl.functions.messages import DeleteMessages
+from telethon.tl.types import InputPeerChat
+
+# Replace with your own values
+API_ID = 8143727  # Your API ID
+API_HASH = 'e2e9b22c6522465b62d8445840a526b1'  # Your API Hash
+BOT_TOKEN = '7755562653:AAEG4-_HOKL9i5nUI0XPZaLMbZXMYtKB4Jo'  # Your Bot Token
+MAIN_CHANNEL = '@animeencodetest'  # Your Channel ID (e.g., '@your_channel')
+
+client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+
+async def send_and_pin_message():
+    """Send a message, pin it, and delete the service message."""
+    try:
+        # Step 1: Send a message
+        message = await client.send_message(MAIN_CHANNEL, "This is a pinned message!")
+
+        # Step 2: Pin the message
+        pinned_message = await client(PinMessage(
+            channel=MAIN_CHANNEL,
+            id=message.id,
+            silent=True  # Silent pin, no notification
+        ))
+
+        # Step 3: Delete the service message that appears when pinning
+        await client.delete_messages(MAIN_CHANNEL, pinned_message.id)
+
+        print("Message pinned and service message deleted.")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+async def main():
+    await send_and_pin_message()
+
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
