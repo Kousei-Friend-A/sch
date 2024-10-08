@@ -9,26 +9,12 @@ API_ID = 8143727  # Your API ID
 API_HASH = 'e2e9b22c6522465b62d8445840a526b1'  # Your API Hash
 BOT_TOKEN = '7755562653:AAEG4-_HOKL9i5nUI0XPZaLMbZXMYtKB4Jo'  # Your Bot Token
 MAIN_CHANNEL = '@animeencodetest'  # Your Channel ID (e.g., '@your_channel')
+MESSAGE_ID = 2  # Message ID to update
 
 client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
-# Store the last sent schedule date and message IDs
-last_message_ids = []
-
-async def delete_previous_schedule():
-    """Delete the previous day's schedule messages using stored IDs."""
-    global last_message_ids
-    if last_message_ids:
-        for message_id in last_message_ids:
-            try:
-                await client.delete_messages(MAIN_CHANNEL, message_id)
-            except Exception as e:
-                print(f"Error deleting message {message_id}: {str(e)}")
-    last_message_ids = []
-
-async def upcoming_animes():
-    """Fetch and send today's anime schedule."""
-    global last_message_ids
+async def update_schedule():
+    """Fetch and update today's anime schedule."""
     try:
         async with ClientSession() as ses:
             res = await ses.get("https://subsplease.org/api/?f=schedule&h=true&tz=Asia/Kolkata")
@@ -45,24 +31,23 @@ async def upcoming_animes():
         text += sch_list
         text += "<b>⏰ Current TimeZone :</b> <code>IST (UTC +5:30)</code>"
 
-        await delete_previous_schedule()
-        message = await client.send_message(MAIN_CHANNEL, text)
-
-        last_message_ids.append(message.id)
+        # Update the existing message with the provided message ID
+        await client.edit_message(MAIN_CHANNEL, MESSAGE_ID, text)
 
     except Exception as err:
         print(f"Error: {str(err)}")
 
-def schedule_upcoming_animes(scheduler):
-    """Schedule the tasks."""
-    scheduler.add_job(upcoming_animes, 'interval', minutes=5)
+async def schedule_updates():
+    """Schedule the updates every 5 minutes."""
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(update_schedule, 'interval', minutes=5)  # Check every 5 minutes
+    scheduler.start()
 
 async def main():
     """Main function to run the bot."""
-    scheduler = AsyncIOScheduler()
-    schedule_upcoming_animes(scheduler)
-    scheduler.start()
-    await client.run_until_disconnected()
+    await update_schedule()  # Send the schedule when the bot starts
+    await schedule_updates()   # Start the scheduler
+    await client.run_until_disconnected()  # Run the client until disconnected
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
