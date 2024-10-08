@@ -59,7 +59,7 @@ async def main():
     """Main function to run the bot."""
     await schedule_updates()  # Start the scheduler
     await app.start()  # Start the Pyrogram client
-    await app.idle()  # Keep the bot running until interrupted
+    await asyncio.Future()  # Keep the bot running indefinitely
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
