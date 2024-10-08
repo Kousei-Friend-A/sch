@@ -26,10 +26,10 @@ async def update_schedule():
             aired_icon = "✅ " if i["aired"] else ""
             title = i["title"]
             time = i["time"]
-            sch_list += f"[<code>{time}</code>] - 📌 <b>{aired_icon}{title}</b>\n\n"
+            sch_list += f"""[<code>{time}</code>] - 📌 <b>{aired_icon}{title}</b>\n\n"""
 
         text += sch_list
-        text += "<b>⏰ Current TimeZone :</b> <code>IST (UTC +5:30)</code>"
+        text += """<b>⏰ Current TimeZone :</b> <code>IST (UTC +5:30)</code>"""
 
         # Update the existing message with the provided message ID
         await client.edit_message(MAIN_CHANNEL, MESSAGE_ID, text)
