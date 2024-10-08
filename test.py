@@ -66,7 +66,7 @@ async def schedule_updates():
     """Schedule the updates for every 5 minutes and daily at 12:30 AM."""
     scheduler = AsyncIOScheduler()
     scheduler.add_job(update_schedule, 'interval', minutes=5)  # Check every 5 minutes
-    scheduler.add_job(update_schedule, 'cron', hour=22, minute=55)  # Check every day at 12:30 AM
+    scheduler.add_job(update_schedule, 'cron', hour=23, minute=0)  # Check every day at 11:00 PM
     scheduler.start()
     logger.info("Scheduler started.")
 
