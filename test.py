@@ -1,8 +1,10 @@
 import asyncio
 import logging
 import json
+from datetime import datetime
 from aiohttp import ClientSession
 from telethon import TelegramClient
+from telethon.tl.functions.messages import PinMessage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Set up logging
@@ -60,19 +62,15 @@ async def update_schedule():
             last_message_id = message.id
             logger.info("Schedule message sent successfully.")
 
-            pinned_message = await client(PinMessage(
-                channel=MAIN_CHANNEL,
-                id=message.id,
-                silent=True
-            ))
-
-            await client.delete_messages(MAIN_CHANNEL, pinned_message.id)
+            # Pin the message after sending
+            await client(PinMessage(MAIN_CHANNEL, message.id, silent=True))
+            logger.info("Pinned the schedule message.")
 
         last_aired_titles = new_aired_titles
 
     except Exception as err:
         logger.error(f"Error while updating schedule: {str(err)}")
-    
+
 async def daily_schedule_update():
     """Delete previous schedule message and send the new schedule every 24 hours."""
     global last_message_id
@@ -87,10 +85,10 @@ async def daily_schedule_update():
         logger.error(f"Error during daily schedule update: {str(err)}")
 
 async def schedule_updates():
-    """Schedule the updates for every 5 minutes and daily."""
+    """Schedule the updates for every 15 minutes and daily."""
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(update_schedule, 'interval', minutes=15)  # Check every 5 minutes
-    scheduler.add_job(daily_schedule_update, 'cron', hour=18, minute=0)  # Check every day at midnight
+    scheduler.add_job(update_schedule, 'interval', minutes=15)  # Check every 15 minutes
+    scheduler.add_job(daily_schedule_update, 'cron', hour=18, minute=0)  # Check every day at 6 PM
     scheduler.start()
     logger.info("Scheduler started.")
 
