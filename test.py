@@ -31,7 +31,7 @@ async def update_schedule():
     global last_message_id, last_aired_titles
     try:
         logger.info("Updating schedule...")
-        
+
         aniContent = await fetch_schedule()
 
         # Get the current date and format it
@@ -40,7 +40,7 @@ async def update_schedule():
 
         # Prepare the new aired shows list
         new_aired_titles = {i["title"] for i in aniContent if i["aired"]}
-        
+
         sch_list = ""
         text = f"📅 Schedule for {formatted_date}\n\n"  # Include the formatted date
         for i in aniContent:
@@ -57,10 +57,20 @@ async def update_schedule():
             await client.edit_message(MAIN_CHANNEL, last_message_id, text)
             logger.info("Schedule message updated successfully.")
         else:
-            # Send the new schedule message if no message exists
-            message = await client.send_message(MAIN_CHANNEL, text)
+            # Step 1: Send the image with the caption
+            message = await client.send_file(MAIN_CHANNEL, 'schedule_image.jpg', caption=text)
             last_message_id = message.id  # Store the last message ID
             logger.info("Schedule message sent successfully.")
+
+            # Step 2: Pin the message
+            pinned_message = await client(PinMessage(
+                channel=MAIN_CHANNEL,
+                id=message.id,
+                silent=True  # Silent pin, no notification
+            ))
+
+            # Step 3: Delete the service message that appears when pinning
+            await client.delete_messages(MAIN_CHANNEL, pinned_message.id)
 
         # Update last aired titles
         last_aired_titles = new_aired_titles
