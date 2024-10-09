@@ -4,7 +4,6 @@ import json
 from datetime import datetime
 from aiohttp import ClientSession
 from telethon import TelegramClient
-from telethon.tl.functions.messages import PinMessage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Set up logging
@@ -58,13 +57,13 @@ async def update_schedule():
                 logger.error(f"Failed to edit message: {str(edit_err)}")
                 last_message_id = None  # Reset if edit fails
         else:
-            message = await client.send_file(MAIN_CHANNEL, 'schedule_image.jpg', caption=text)
+            message = await client.send_message(MAIN_CHANNEL, text)
             last_message_id = message.id
             logger.info("Schedule message sent successfully.")
 
-            # Pin the message after sending
-            await client(PinMessage(MAIN_CHANNEL, message.id, silent=True))
-            logger.info("Pinned the schedule message.")
+            # Pin the message with notification
+            await client.pin_message(MAIN_CHANNEL, message.id, notify=True)
+            logger.info("Pinned the schedule message with notification.")
 
         last_aired_titles = new_aired_titles
 
