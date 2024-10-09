@@ -2,7 +2,7 @@ import asyncio
 import logging
 import json
 from aiohttp import ClientSession
-from telethon import TelegramClient, events
+from telethon import TelegramClient
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Set up logging
@@ -18,6 +18,7 @@ MAIN_CHANNEL = '@animeencodetest'  # Your Channel ID (e.g., '@your_channel')
 client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
 last_message_id = None  # Variable to store the last message ID
+last_aired_titles = set()  # Set to store last aired titles
 
 async def fetch_schedule():
     """Fetch today's anime schedule from the API."""
@@ -25,24 +26,17 @@ async def fetch_schedule():
         res = await ses.get("https://subsplease.org/api/?f=schedule&h=true&tz=Asia/Kolkata")
         return json.loads(await res.text())["schedule"]
 
-async def delete_previous_schedule():
-    """Delete the previous schedule message if it exists."""
-    global last_message_id
-    if last_message_id is not None:
-        try:
-            await client.delete_messages(MAIN_CHANNEL, last_message_id)
-            logger.info("Deleted previous schedule message.")
-        except Exception as e:
-            logger.error(f"Error deleting previous message: {str(e)}")
-
 async def update_schedule():
-    """Fetch and send today's anime schedule."""
-    global last_message_id
+    """Fetch and update today's anime schedule."""
+    global last_message_id, last_aired_titles
     try:
         logger.info("Updating schedule...")
-        await delete_previous_schedule()  # Delete previous schedule message
-
+        
         aniContent = await fetch_schedule()
+        
+        # Prepare the new aired shows list
+        new_aired_titles = {i["title"] for i in aniContent if i["aired"]}
+        
         sch_list = ""
         text = "<b>📆 Today's Schedule</b>\n\n"
         for i in aniContent:
@@ -54,20 +48,40 @@ async def update_schedule():
         text += sch_list
         text += """__⏰ Current TimeZone :__ `IST (UTC +5:30)`"""
 
-        # Send the new schedule message
-        message = await client.send_message(MAIN_CHANNEL, text)
+        # If we have an existing message, update it
+        if last_message_id:
+            await client.edit_message(MAIN_CHANNEL, last_message_id, text)
+            logger.info("Schedule message updated successfully.")
+        else:
+            # Send the new schedule message if no message exists
+            message = await client.send_message(MAIN_CHANNEL, text)
+            last_message_id = message.id  # Store the last message ID
+            logger.info("Schedule message sent successfully.")
 
-        last_message_id = message.id  # Store the last message ID
-        logger.info("Schedule updated successfully.")
+        # Update last aired titles
+        last_aired_titles = new_aired_titles
 
     except Exception as err:
         logger.error(f"Error while updating schedule: {str(err)}")
 
+async def daily_schedule_update():
+    """Delete previous schedule message and send the new schedule every 24 hours."""
+    global last_message_id
+    try:
+        if last_message_id is not None:
+            await client.delete_messages(MAIN_CHANNEL, last_message_id)
+            logger.info("Deleted previous schedule message.")
+
+        await update_schedule()  # Update the schedule message after deletion
+
+    except Exception as err:
+        logger.error(f"Error during daily schedule update: {str(err)}")
+
 async def schedule_updates():
-    """Schedule the updates for every 5 minutes and daily at 12:30 AM."""
+    """Schedule the updates for every 5 minutes and daily."""
     scheduler = AsyncIOScheduler()
     scheduler.add_job(update_schedule, 'interval', minutes=5)  # Check every 5 minutes
-    scheduler.add_job(update_schedule, 'cron', hour=23, minute=25)  # Check every day at 12:30 AM
+    scheduler.add_job(daily_schedule_update, 'cron', hour=8, minute=45)  # Check every day at midnight
     scheduler.start()
     logger.info("Scheduler started.")
 
