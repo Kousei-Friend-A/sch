@@ -38,15 +38,15 @@ async def update_schedule():
         new_aired_titles = {i["title"] for i in aniContent if i["aired"]}
         
         sch_list = ""
-        text = "<b>📆 Today's Schedule</b>\n\n"
+        text = "___📆 Today's Schedule___\n\n"
         for i in aniContent:
             aired_icon = "✅ " if i["aired"] else ""
             title = i["title"]
             time = i["time"]
-            sch_list += f"""[`{time}`] - 📌 __{title}__ {aired_icon}\n\n"""
+            sch_list += f"""[`{time}`] - 📌 ___{title}___ {aired_icon}\n\n"""
 
         text += sch_list
-        text += """__⏰ Current TimeZone :__ `IST (UTC +5:30)`"""
+        text += """___⏰ Current TimeZone :___ `IST (UTC +5:30)`"""
 
         # If we have an existing message, update it
         if last_message_id:
