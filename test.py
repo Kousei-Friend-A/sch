@@ -42,15 +42,15 @@ async def update_schedule():
         new_aired_titles = {i["title"] for i in aniContent if i["aired"]}
 
         sch_list = ""
-        text = f"📅 Schedule for {formatted_date}\n\n"  # Include the formatted date
+        text = f"📅 **Schedule for {formatted_date}**\n\n"  # Bold formatting for the title
         for i in aniContent:
             aired_icon = "✅ " if i["aired"] else ""
             title = i["title"]
             time = i["time"]
-            sch_list += f"""[`{time}`] - 📌 ___{title}___ {aired_icon}\n\n"""
+            sch_list += f"""[`{time}`] - 📌 ___**{title}**___ {aired_icon}\n\n"""  # Bold formatting for titles
 
         text += sch_list
-        text += """___⏰ Current TimeZone :___ `IST (UTC +5:30)`"""
+        text += """**⏰ Current TimeZone :** `IST (UTC +5:30)`"""
 
         # If we have an existing message, update it
         if last_message_id:
