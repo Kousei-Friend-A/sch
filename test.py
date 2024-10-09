@@ -33,12 +33,16 @@ async def update_schedule():
         logger.info("Updating schedule...")
         
         aniContent = await fetch_schedule()
-        
+
+        # Get the current date and format it
+        today_date = datetime.now()
+        formatted_date = today_date.strftime("%A (%d-%m-%Y)")  # e.g., "Wednesday (09-10-2024)"
+
         # Prepare the new aired shows list
         new_aired_titles = {i["title"] for i in aniContent if i["aired"]}
         
         sch_list = ""
-        text = "___📆 Today's Schedule___\n\n"
+        text = f"📅 Schedule for {formatted_date}\n\n"  # Include the formatted date
         for i in aniContent:
             aired_icon = "✅ " if i["aired"] else ""
             title = i["title"]
@@ -63,7 +67,7 @@ async def update_schedule():
 
     except Exception as err:
         logger.error(f"Error while updating schedule: {str(err)}")
-
+        
 async def daily_schedule_update():
     """Delete previous schedule message and send the new schedule every 24 hours."""
     global last_message_id
