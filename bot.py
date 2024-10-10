@@ -36,7 +36,6 @@ def save_last_message_id(message_id):
         json.dump({'last_message_id': message_id}, f)
 
 last_message_id = load_last_message_id()  # Load last message ID from the file
-last_aired_titles = set()  # Set to store last aired titles
 
 async def fetch_schedule():
     """Fetch today's anime schedule from the API."""
@@ -51,31 +50,34 @@ async def fetch_schedule():
         return []
 
 async def update_schedule():
-    global last_message_id, last_aired_titles
+    global last_message_id
     try:
         logger.info("Checking for schedule update...")
         aniContent = await fetch_schedule()
 
+        # Debug: Log the fetched schedule data
+        logger.debug(f"Fetched schedule data: {aniContent}")
+
         today_date = datetime.now()
         formatted_date = today_date.strftime("%A (%d-%m-%Y)")
-
-        new_aired_titles = {i["title"] for i in aniContent if i["aired"]}
 
         sch_list = ""
         for i in aniContent:
             title = i["title"]
             time_24h = i["time"]
-            
+
             # Convert time from 24-hour to 12-hour format with AM/PM
             time = datetime.strptime(time_24h, '%H:%M').strftime('%I:%M %p')
 
             # Use checkmark for aired shows and pin for upcoming ones
-            aired_icon = "✅" if i["aired"] else "📌"
-            
-            # Format each entry with the desired look
-            sch_list += f"""[`{time}`] - {aired_icon} **{title}**\n\n"""
+            aired_icon = "✅" if i["aired"] else ""
 
-        text = f"📅 **Schedule for {formatted_date}**\n\n{sch_list}"
+            # Format each entry with the desired look
+            sch_list += f"""[`{time}`] - 📌 **{title}** {aired_icon}\n\n"""
+
+        # Prepare the message text
+        text = f"📅 **Schedule for {formatted_date}**\n\n"
+        text += sch_list
         text += """**⏰ Current TimeZone :** `IST (UTC +5:30)`"""
 
         image_path = 'schedule_image.jpg'  # Path to your image file
@@ -86,7 +88,7 @@ async def update_schedule():
                 await client.edit_message(MAIN_CHANNEL, last_message_id, text)
                 logger.info("Schedule message updated successfully.")
                 # Send the image with the same caption
-                await client.send_file(MAIN_CHANNEL, image_path, caption=text)
+                await client.send_file(MAIN_CHANNEL, image_path, caption="Schedule")
                 logger.info("Sent updated schedule image.")
             except Exception as edit_err:
                 logger.error(f"Failed to edit message: {str(edit_err)}")
@@ -103,16 +105,14 @@ async def update_schedule():
             logger.info("Pinned the schedule message with notification.")
 
             # Now send the image with the caption
-            await client.send_file(MAIN_CHANNEL, image_path, caption=text)
+            await client.send_file(MAIN_CHANNEL, image_path, caption="Schedule")
             logger.info("Sent schedule image.")
-
-        last_aired_titles = new_aired_titles
 
     except Exception as err:
         logger.error(f"Error while updating schedule: {str(err)}")
 
 async def daily_schedule_update():
-    """Delete previous schedule message and send the new schedule every day at 12:05 AM."""
+    """Delete previous schedule message and send the new schedule every day at 1:40 PM."""
     global last_message_id
     try:
         if last_message_id is not None:
@@ -124,10 +124,10 @@ async def daily_schedule_update():
     except Exception as err:
         logger.error(f"Error during daily schedule update: {str(err)}")
 
-async def wait_until_target_time():
+async def wait_until_midnight():
     """Wait until 13:40 PM to send the initial schedule."""
     now = datetime.now()
-    target_time = now.replace(hour=13, minute=50, second=0, microsecond=0)
+    target_time = now.replace(hour=14, minute=0, second=0, microsecond=0)
 
     if now > target_time:  # If it's already past the target time, set to the next day
         target_time += timedelta(days=1)
@@ -140,13 +140,13 @@ async def schedule_updates():
     """Schedule the updates for every 5 minutes and daily."""
     scheduler = AsyncIOScheduler()
     scheduler.add_job(update_schedule, 'interval', minutes=5)  # Check every 5 minutes
-    scheduler.add_job(daily_schedule_update, 'cron', hour=13, minute=50)  # Send the schedule at 13:40 PM daily
+    scheduler.add_job(daily_schedule_update, 'cron', hour=14, minute=0)  # Check every day at 1:40 PM
     scheduler.start()
     logger.info("Scheduler started.")
 
 async def main():
     """Main function to run the bot."""
-    await wait_until_target_time()  # Wait until 13:40 PM
+    await wait_until_midnight()  # Wait until 1:40 PM
     await update_schedule()  # Send the initial schedule
     await schedule_updates()  # Start the scheduler
     await client.run_until_disconnected()  # Run the client until disconnected
