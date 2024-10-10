@@ -122,9 +122,9 @@ async def daily_schedule_update():
         logger.error(f"Error during daily schedule update: {str(err)}")
 
 async def wait_until_midnight():
-    """Wait until 12:05 AM to send the initial schedule."""
+    """Wait until 13:35 PM to send the initial schedule."""
     now = datetime.now()
-    target_time = now.replace(hour=13, minute=33, second=0, microsecond=0)
+    target_time = now.replace(hour=13, minute=35, second=0, microsecond=0)
 
     if now > target_time:  # If it's already past midnight, set to the next day
         target_time += timedelta(days=1)
@@ -134,10 +134,10 @@ async def wait_until_midnight():
     await asyncio.sleep(wait_time)
 
 async def schedule_updates():
-    """Schedule the updates for every 15 minutes and daily."""
+    """Schedule the updates for every 5 minutes and daily."""
     scheduler = AsyncIOScheduler()
     scheduler.add_job(update_schedule, 'interval', minutes=5)  # Check every 15 minutes
-    scheduler.add_job(daily_schedule_update, 'cron', hour=13, minute=33)  # Check every day at 12:05 AM
+    scheduler.add_job(daily_schedule_update, 'cron', hour=13, minute=35)  # Check every day at 12:05 AM
     scheduler.start()
     logger.info("Scheduler started.")
 
