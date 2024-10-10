@@ -63,10 +63,14 @@ async def update_schedule():
 
         sch_list = ""
         for i in aniContent:
-            aired_icon = "✅ " if i["aired"] else ""
             title = i["title"]
             time = i["time"]
-            sch_list += f"""[`{time}`] - 📌 **{title}** {aired_icon}\n\n"""
+            
+            # Use checkmark for aired shows and pin for upcoming ones
+            aired_icon = "✅" if i["aired"] else "📌"
+            
+            # Format each entry with the desired look
+            sch_list += f"""[`{time}`] - {aired_icon} **{title}**\n\n"""
 
         text = f"📅 **Schedule for {formatted_date}**\n\n{sch_list}"
         text += """**⏰ Current TimeZone :** `IST (UTC +5:30)`"""
