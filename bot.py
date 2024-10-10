@@ -64,8 +64,11 @@ async def update_schedule():
         sch_list = ""
         for i in aniContent:
             title = i["title"]
-            time = i["time"]
+            time_24h = i["time"]
             
+            # Convert time from 24-hour to 12-hour format with AM/PM
+            time = datetime.strptime(time_24h, '%H:%M').strftime('%I:%M %p')
+
             # Use checkmark for aired shows and pin for upcoming ones
             aired_icon = "✅" if i["aired"] else "📌"
             
@@ -83,7 +86,7 @@ async def update_schedule():
                 await client.edit_message(MAIN_CHANNEL, last_message_id, text)
                 logger.info("Schedule message updated successfully.")
                 # Send the image with the same caption
-                await client.send_file(MAIN_CHANNEL, image_path, caption="Schedule")
+                await client.send_file(MAIN_CHANNEL, image_path, caption=text)
                 logger.info("Sent updated schedule image.")
             except Exception as edit_err:
                 logger.error(f"Failed to edit message: {str(edit_err)}")
@@ -100,7 +103,7 @@ async def update_schedule():
             logger.info("Pinned the schedule message with notification.")
 
             # Now send the image with the caption
-            await client.send_file(MAIN_CHANNEL, image_path, caption="Schedule")
+            await client.send_file(MAIN_CHANNEL, image_path, caption=text)
             logger.info("Sent schedule image.")
 
         last_aired_titles = new_aired_titles
@@ -109,7 +112,7 @@ async def update_schedule():
         logger.error(f"Error while updating schedule: {str(err)}")
 
 async def daily_schedule_update():
-    """Delete previous schedule message and send the new schedule every day at 13:40 PM."""
+    """Delete previous schedule message and send the new schedule every day at 12:05 AM."""
     global last_message_id
     try:
         if last_message_id is not None:
@@ -121,12 +124,12 @@ async def daily_schedule_update():
     except Exception as err:
         logger.error(f"Error during daily schedule update: {str(err)}")
 
-async def wait_until_schedule_time():
+async def wait_until_target_time():
     """Wait until 13:40 PM to send the initial schedule."""
     now = datetime.now()
-    target_time = now.replace(hour=13, minute=40, second=0, microsecond=0)
+    target_time = now.replace(hour=13, minute=50, second=0, microsecond=0)
 
-    if now > target_time:  # If it's already past the scheduled time, set to the next day
+    if now > target_time:  # If it's already past the target time, set to the next day
         target_time += timedelta(days=1)
 
     wait_time = (target_time - now).total_seconds()
@@ -134,16 +137,16 @@ async def wait_until_schedule_time():
     await asyncio.sleep(wait_time)
 
 async def schedule_updates():
-    """Schedule the updates for every 5 minutes and daily at 13:40 PM."""
+    """Schedule the updates for every 5 minutes and daily."""
     scheduler = AsyncIOScheduler()
     scheduler.add_job(update_schedule, 'interval', minutes=5)  # Check every 5 minutes
-    scheduler.add_job(daily_schedule_update, 'cron', hour=13, minute=40)  # Daily update at 13:40 PM
+    scheduler.add_job(daily_schedule_update, 'cron', hour=13, minute=50)  # Send the schedule at 13:40 PM daily
     scheduler.start()
     logger.info("Scheduler started.")
 
 async def main():
     """Main function to run the bot."""
-    await wait_until_schedule_time()  # Wait until 13:40 PM
+    await wait_until_target_time()  # Wait until 13:40 PM
     await update_schedule()  # Send the initial schedule
     await schedule_updates()  # Start the scheduler
     await client.run_until_disconnected()  # Run the client until disconnected
